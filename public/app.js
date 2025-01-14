@@ -66,27 +66,31 @@ window.addEventListener("keyup", (e) => keys[e.key] = false);
 
 // Update player physics
 function updatePlayer(deltaTime) {
-    const scaledSpeed = playerSpeed * deltaTime;
-    const scaledJumpStrength = jumpStrength * deltaTime;
+    // Constants for consistent physics
+    const gravityForce = gravity / 60; // Divide by a reference FPS (e.g., 60)
+    const jumpForce = jumpStrength / 60;
 
-    if (keys["ArrowLeft"]) player.dx = -scaledSpeed;
-    else if (keys["ArrowRight"]) player.dx = scaledSpeed;
+    // Horizontal movement
+    if (keys["ArrowLeft"]) player.dx = -playerSpeed * deltaTime;
+    else if (keys["ArrowRight"]) player.dx = playerSpeed * deltaTime;
     else player.dx = 0;
 
+    // Jumping logic
     if (keys["ArrowUp"] && player.onGround) {
-        player.dy = scaledJumpStrength;
+        player.dy = jumpForce; // Set initial jump velocity
         player.onGround = false;
     }
 
-    // Apply gravity only if the player is not on the ground
+    // Gravity effect
     if (!player.onGround) {
-        player.dy += gravity * deltaTime;
+        player.dy += gravityForce; // Apply gravity directly without scaling by deltaTime
     }
 
+    // Update position
     player.x += player.dx;
     player.y += player.dy;
 
-    // Handle collisions with blocks
+    // Collision detection and ground check
     player.onGround = false;
     blocks.forEach((block) => {
         if (
@@ -105,24 +109,16 @@ function updatePlayer(deltaTime) {
                 player.onGround = true;
             }
         }
-
-        if (
-            player.x < block.x + block.width &&
-            player.x + player.width > block.x &&
-            player.y >= block.y + block.height &&
-            player.y + player.dy <= block.y + block.height
-        ) {
-            player.dy = 0;
-            player.y = block.y + block.height;
-        }
     });
 
+    // Ground collision
     if (player.y + player.height >= GAME_HEIGHT) {
         player.y = GAME_HEIGHT - player.height;
         player.dy = 0;
         player.onGround = true;
     }
 
+    // Emit position update
     socket.emit("updatePosition", { x: player.x, y: player.y });
 }
 
