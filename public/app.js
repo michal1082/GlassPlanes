@@ -1,5 +1,7 @@
 const socket = io();
 
+
+
 // Fixed game world dimensions
 const GAME_WIDTH = 1535;
 const GAME_HEIGHT = 700;
@@ -17,10 +19,12 @@ const scale = Math.min(window.innerWidth / GAME_WIDTH, window.innerHeight / GAME
 canvas.style.width = `${GAME_WIDTH * scale}px`;
 canvas.style.height = `${GAME_HEIGHT * scale}px`;
 
+let lastTime = performance.now();
+
 // Game variables
-const gravity = 0.5;
-const playerSpeed = 7;
-const jumpStrength = -11;
+const gravity = 0.5 * 60;
+const playerSpeed = 7 * 60;
+const jumpStrength = -11 * 60;
 
 let players = {};
 let keys = {};
@@ -61,19 +65,22 @@ window.addEventListener("keydown", (e) => keys[e.key] = true);
 window.addEventListener("keyup", (e) => keys[e.key] = false);
 
 // Update player physics
-function updatePlayer() {
-    if (keys["ArrowLeft"]) player.dx = -playerSpeed;
-    else if (keys["ArrowRight"]) player.dx = playerSpeed;
+function updatePlayer(deltaTime) {
+    const scaledSpeed = playerSpeed * deltaTime;
+    const scaledJumpStrength = jumpStrength * deltaTime;
+
+    if (keys["ArrowLeft"]) player.dx = -scaledSpeed;
+    else if (keys["ArrowRight"]) player.dx = scaledSpeed;
     else player.dx = 0;
 
     if (keys["ArrowUp"] && player.onGround) {
-        player.dy = jumpStrength;
+        player.dy = scaledJumpStrength;
         player.onGround = false;
     }
 
     // Apply gravity only if the player is not on the ground
     if (!player.onGround) {
-        player.dy += gravity;
+        player.dy += gravity * deltaTime;
     }
 
     player.x += player.dx;
@@ -293,7 +300,11 @@ function drawPlayers() {
 }
 
 function gameLoop() {
-    updatePlayer();
+    const now = performance.now();
+    const deltaTime = (now - lastTime) / 1000; // Time elapsed since the last frame in seconds
+    lastTime = now;
+
+    updatePlayer(deltaTime);
     updateCamera();
     drawPlayers();
     requestAnimationFrame(gameLoop);
