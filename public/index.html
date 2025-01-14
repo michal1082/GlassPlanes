@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Multiplayer Game</title>
+    <script defer src="/socket.io/socket.io.js"></script>
+    <script defer src="app.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+
+        #chat-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 250px;
+            height: 300px;
+            max-height: 300px;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 5px;
+            padding: 10px;
+            overflow: hidden;
+            border: 1px black solid;
+        }
+
+        #chat-box {
+            flex-grow: 1;
+            overflow-y: auto;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        #chat-input {
+            width: 100%;
+            padding: 6px;
+            border: white 1px solid;
+            border-radius: 10px;
+            background-color: transparent;
+            color: white;
+        }
+
+        #chat-input:focus {
+            outline: none;
+        }
+
+        canvas{
+            border: 2px black solid;
+
+            background: linear-gradient(180deg, rgb(139, 162, 212) 0%, rgb(252, 149, 123) 100%);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    <div id="chat-container">
+        <div id="chat-box"></div>
+        <input id="chat-input" type="text" placeholder="Type a message..." />
+    </div>
+</body>
+</html>
