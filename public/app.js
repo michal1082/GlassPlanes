@@ -20,11 +20,13 @@ canvas.style.width = `${GAME_WIDTH * scale}px`;
 canvas.style.height = `${GAME_HEIGHT * scale}px`;
 
 let lastTime = performance.now();
+let accumulatedTime = 0;
+const fixedDeltaTime = 1 / 60;
 
 // Game variables
-const gravity = 0.5 * 60;
-const playerSpeed = 7 * 60;
-const jumpStrength = -11 * 60;
+const gravity = 0.5 * 1000;
+const playerSpeed = 7 * 40;
+const jumpStrength = -11 * 25;
 
 let players = {};
 let keys = {};
@@ -66,29 +68,28 @@ window.addEventListener("keyup", (e) => keys[e.key] = false);
 
 // Update player physics
 function updatePlayer(deltaTime) {
-    // Constants for consistent physics
-    const gravityForce = gravity / 60; // Divide by a reference FPS (e.g., 60)
-    const jumpForce = jumpStrength / 60;
+    const gravityForce = gravity * deltaTime; // Gravity applied per time step
+    const jumpForce = jumpStrength; // Jump force does not depend on deltaTime
 
     // Horizontal movement
-    if (keys["ArrowLeft"]) player.dx = -playerSpeed * deltaTime;
-    else if (keys["ArrowRight"]) player.dx = playerSpeed * deltaTime;
+    if (keys["ArrowLeft"]) player.dx = -playerSpeed;
+    else if (keys["ArrowRight"]) player.dx = playerSpeed;
     else player.dx = 0;
 
     // Jumping logic
     if (keys["ArrowUp"] && player.onGround) {
-        player.dy = jumpForce; // Set initial jump velocity
+        player.dy = jumpForce; // Set jump velocity directly
         player.onGround = false;
     }
 
-    // Gravity effect
+    // Apply gravity
     if (!player.onGround) {
-        player.dy += gravityForce; // Apply gravity directly without scaling by deltaTime
+        player.dy += gravityForce;
     }
 
     // Update position
-    player.x += player.dx;
-    player.y += player.dy;
+    player.x += player.dx * deltaTime;
+    player.y += player.dy * deltaTime;
 
     // Collision detection and ground check
     player.onGround = false;
@@ -97,7 +98,7 @@ function updatePlayer(deltaTime) {
             player.x < block.x + block.width &&
             player.x + player.width > block.x &&
             player.y + player.height <= block.y &&
-            player.y + player.height + player.dy >= block.y
+            player.y + player.height + player.dy * deltaTime >= block.y
         ) {
             if (block.type === "bad") {
                 player.x = startingPosition.x;
@@ -121,6 +122,7 @@ function updatePlayer(deltaTime) {
     // Emit position update
     socket.emit("updatePosition", { x: player.x, y: player.y });
 }
+
 
 // Update the camera position
 function updateCamera() {
@@ -300,9 +302,16 @@ function gameLoop() {
     const deltaTime = (now - lastTime) / 1000; // Time elapsed since the last frame in seconds
     lastTime = now;
 
-    updatePlayer(deltaTime);
-    updateCamera();
-    drawPlayers();
+    accumulatedTime += deltaTime;
+
+    // Process fixed time steps while keeping the frame smooth
+    while (accumulatedTime >= fixedDeltaTime) {
+        updatePlayer(fixedDeltaTime); // Update using the fixed time step
+        updateCamera();
+        accumulatedTime -= fixedDeltaTime;
+    }
+
+    drawPlayers(); // Always draw to match the latest rendered frame
     requestAnimationFrame(gameLoop);
 }
 
